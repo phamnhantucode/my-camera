@@ -1,4 +1,4 @@
-package com.phamnhantucode.mycamera.camera.presentation
+package com.phamnhantucode.mycamera.camera.presentation.components
 
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
