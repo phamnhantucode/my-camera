@@ -11,7 +11,7 @@ class MyCameraApp: Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
-            androidContext(this@MyCameraApp)
+            androidContext(applicationContext)
             androidLogger()
             modules(appModule)
         }

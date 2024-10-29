@@ -2,6 +2,7 @@ package com.phamnhantucode.mycamera.core.helper
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -10,7 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class StorageKeeper(
-    val context: Context
+    private val context: Context
 ) {
     suspend fun saveImage(path: String, bitmap: Bitmap, onSaved: (String) -> Unit) {
         withContext(Dispatchers.IO) {
@@ -26,6 +27,20 @@ class StorageKeeper(
                     onSaved(file.absolutePath)
                 }
             }
+        }
+    }
+
+    suspend fun getImagesBitmap(): List<Bitmap> {
+       return withContext(Dispatchers.IO) {
+            val bitmaps = mutableListOf<Bitmap>()
+            val dir = File(context.filesDir.absolutePath)
+            if (dir.exists() && dir.isDirectory) {
+                dir.listFiles()?.forEach { file ->
+                    if (file.isFile && file.extension == "jpeg")
+                        bitmaps.add(BitmapFactory.decodeFile(file.absolutePath))
+                }
+            }
+            bitmaps
         }
     }
 }
