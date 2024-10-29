@@ -30,17 +30,41 @@ class StorageKeeper(
         }
     }
 
-    suspend fun getImagesBitmap(): List<Bitmap> {
+    suspend fun getImages(): List<File> {
        return withContext(Dispatchers.IO) {
-            val bitmaps = mutableListOf<Bitmap>()
             val dir = File(context.filesDir.absolutePath)
             if (dir.exists() && dir.isDirectory) {
-                dir.listFiles()?.forEach { file ->
-                    if (file.isFile && file.extension == "jpeg")
-                        bitmaps.add(BitmapFactory.decodeFile(file.absolutePath))
+                dir.listFiles()?.mapNotNull { file ->
+                    if (file.isFile && file.extension.equals("jpeg", true)) {
+                        file
+                    } else {
+                        null
+                    }
+                } ?: emptyList()
+            } else {
+                emptyList()
+            }
+        }
+    }
+
+    suspend fun deleteImagesByFiles(files: List<File>) {
+        withContext(Dispatchers.IO) {
+            files.forEach { file ->
+                if (file.exists()) {
+                    file.delete()
                 }
             }
-            bitmaps
+        }
+    }
+
+    suspend fun deleteImagesByPath(paths: List<String>) {
+        withContext(Dispatchers.IO) {
+            paths.forEach { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
         }
     }
 }

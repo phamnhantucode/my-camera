@@ -4,8 +4,8 @@ package com.phamnhantucode.mycamera.list_images.presentation.components
 
 import android.content.res.Resources
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -64,37 +65,36 @@ fun MyImageItem(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        AnimatedVisibility(visible = isSelectable) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = if (isSelected) 0.3f else 0.0f)
+                )
+        ) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                    )
+                    .padding(8.dp)
+                    .align(Alignment.TopStart)
+                    .clip(CircleShape)
+                    .size(24.dp)
+                    .border(
+                        width = 1.dp,
+                        color = if (isSelectable) MaterialTheme.colorScheme.surface else Color.Transparent,
+                        shape = CircleShape
+                    ),
             ) {
-                Box(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.TopStart)
-                        .clip(CircleShape)
-                        .size(24.dp)
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = CircleShape
-                        ),
+                AnimatedVisibility(
+                    visible = isSelected,
+                    enter = scaleIn(),
+                    exit = scaleOut(),
                 ) {
-                    AnimatedVisibility(
-                        visible = isSelected,
-                        enter = expandIn(),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = "Selected",
-                            tint = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Selected",
+                        tint = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         }
