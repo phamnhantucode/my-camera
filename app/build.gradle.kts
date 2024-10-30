@@ -70,6 +70,7 @@ dependencies {
     implementation("io.insert-koin:koin-core:$koin_version")
     implementation("io.insert-koin:koin-android:$koin_version")
     implementation("io.insert-koin:koin-androidx-compose:$koin_version")
+    implementation("com.vanniktech:android-image-cropper:4.3.3")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

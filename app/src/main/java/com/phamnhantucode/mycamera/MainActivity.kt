@@ -4,13 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import com.example.compose.MyCameraTheme
 import com.phamnhantucode.mycamera.core.helper.PermissionHelper
-import com.phamnhantucode.mycamera.list_images.presentation.ListImagesScreen
-import com.phamnhantucode.mycamera.list_images.presentation.ListImagesViewModel
-import org.koin.androidx.compose.koinViewModel
+import com.phamnhantucode.mycamera.edit_image.presentation.EditImageScreen
+import com.phamnhantucode.mycamera.edit_image.presentation.EditImageState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,12 +18,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyCameraTheme {
-                val viewModel =
-                    koinViewModel<ListImagesViewModel>()
-                val state by viewModel.state.collectAsStateWithLifecycle()
-
-                ListImagesScreen(
-                    state = state
+                EditImageScreen(
+                    state = EditImageState(
+                        image = getDrawable(R.drawable.example_image)!!.toBitmap().asImageBitmap()
+                    )
                 )
             }
         }
