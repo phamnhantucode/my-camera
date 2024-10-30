@@ -1,7 +1,10 @@
 package com.phamnhantucode.mycamera.list_images.presentation
 
+import android.content.Context
 import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.phamnhantucode.mycamera.core.helper.StorageKeeper
@@ -73,8 +76,15 @@ class ListImagesViewModel(
                     }
                 }
                 is ListImagesAction.OpenImage -> TODO()
-                is ListImagesAction.ShareSelectedImages -> TODO()
             }
         }
+    }
+
+    fun getImageUri(context: Context, index: Int): Uri {
+        return FileProvider.getUriForFile(
+            context,
+            context.packageName + ".provider",
+            fileImages[index]
+        )
     }
 }
