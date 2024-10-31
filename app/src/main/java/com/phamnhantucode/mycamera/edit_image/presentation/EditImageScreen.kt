@@ -1,10 +1,24 @@
 package com.phamnhantucode.mycamera.edit_image.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -14,51 +28,153 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import com.phamnhantucode.mycamera.core.presentation.components.ActionGroupButtons
+import com.phamnhantucode.mycamera.core.presentation.utils.sharedImages
+import com.phamnhantucode.mycamera.edit_image.presentation.components.CropImageView
+import com.phamnhantucode.mycamera.edit_image.presentation.components.CropRotateActionButtons
+import com.phamnhantucode.mycamera.edit_image.presentation.components.EditActionButtons
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun EditImageScreen(
     modifier: Modifier = Modifier,
-    state: EditImageState
+    state: EditImageState,
+    viewModel: EditImageViewModel = koinViewModel()
 ) {
-    var size by remember {
-        mutableStateOf(IntSize(0, 0))
-    }
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    val imageRatio = remember {
-        state.image.width.toFloat() / state.image.height.toFloat()
-    }
-
-    val transformState = rememberTransformableState { zoomChange, offsetChange, _ ->
-        updateTransformState(zoomChange, offsetChange, size, imageRatio, scale, offset) { scaleChange, offsetChange ->
-            scale = scaleChange
-            offset = offsetChange
+    if (state.image != null) {
+        var size by remember {
+            mutableStateOf(IntSize(0, 0))
         }
-    }
+        var scale by remember { mutableFloatStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+        val imageRatio = remember {
+            state.image.width.toFloat() / state.image.height.toFloat()
+        }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .onSizeChanged { size = it }
-    ) {
-        Image(
-            bitmap = state.image,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
-                .transformable(state = transformState)
-        )
+        val transformState = rememberTransformableState { zoomChange, offsetChange, _ ->
+            updateTransformState(
+                zoomChange,
+                offsetChange,
+                size,
+                imageRatio,
+                scale,
+                offset
+            ) { newScale, newOffset ->
+                scale = newScale
+                offset = newOffset
+            }
+        }
+
+        Scaffold {
+            when (state.isEditing) {
+                true -> {
+                    Column(
+                        modifier = Modifier
+                            .padding(it)
+                            .fillMaxSize()
+                            .background(Color.Black),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Box(
+                            modifier = modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .padding(it)
+                        ) {
+                            CropImageView(
+                                imageBitmap = state.image,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .fillMaxWidth()
+                        ) {
+                            CropRotateActionButtons(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                contentColor = Color.White,
+                                onRotate = {
+                                },
+                                onFlip = {
+                                }
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            EditActionButtons(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                contentColor = Color.White
+                            )
+                        }
+
+                    }
+                }
+
+                else -> {
+                    Box(
+                        modifier = modifier
+                            .padding(it)
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures {
+                                    viewModel.onAction(EditImageAction.ClickedImage)
+                                }
+                            }
+                            .onSizeChanged { size = it }
+                    ) {
+                        Image(
+                            bitmap = state.image,
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    translationX = offset.x,
+                                    translationY = offset.y
+                                )
+                                .transformable(state = transformState)
+                        )
+                        AnimatedVisibility(
+                            visible = state.isShowingActionButtons,
+                            enter = expandIn(expandFrom = Alignment.BottomCenter),
+                            exit = fadeOut(),
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        ) {
+                            val context = LocalContext.current
+                            ActionGroupButtons(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surface),
+                                onShared = {
+                                    sharedImages(context, listOf(viewModel.getImageUri(context)))
+                                },
+                                onDelete = {
+                                    viewModel.onAction(EditImageAction.DeleteImage)
+                                },
+                                onEdit = {
+                                    viewModel.onAction(EditImageAction.EditImage)
+                                }
+                            )
+
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        CircularProgressIndicator()
     }
 }
 

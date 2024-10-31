@@ -1,10 +1,7 @@
 package com.phamnhantucode.mycamera.list_images.presentation
 
-import android.content.Context
-import android.content.Intent
 import android.content.res.Resources
 import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeOut
@@ -31,7 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.compose.MyCameraTheme
 import com.phamnhantucode.mycamera.R
-import com.phamnhantucode.mycamera.list_images.presentation.components.ActionGroupButtons
+import com.phamnhantucode.mycamera.core.presentation.components.ActionGroupButtons
+import com.phamnhantucode.mycamera.core.presentation.utils.sharedImages
 import com.phamnhantucode.mycamera.list_images.presentation.components.ListImagesAppBar
 import com.phamnhantucode.mycamera.list_images.presentation.components.MyImageItem
 import org.koin.androidx.compose.koinViewModel
@@ -119,26 +117,6 @@ fun ListImagesScreen(
         }
     }
 
-}
-
-private fun sharedImages(context: Context, imageUris: List<Uri>) {
-    val sharedIntent = Intent().apply {
-        if (imageUris.size > 1) {
-            action = Intent.ACTION_SEND_MULTIPLE
-            putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(imageUris))
-        } else {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_STREAM, imageUris.first())
-        }
-        type = "image/*"
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(
-        Intent.createChooser(
-            sharedIntent,
-            context.getString(R.string.share)
-        )
-    )
 }
 
 @Preview(widthDp = 360, heightDp = 640)

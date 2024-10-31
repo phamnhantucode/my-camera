@@ -3,6 +3,7 @@ package com.phamnhantucode.mycamera.core.helper
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -66,5 +67,19 @@ class StorageKeeper(
                 }
             }
         }
+    }
+
+    suspend fun getImage(path: String): File? {
+        return withContext(Dispatchers.IO) {
+            val file = File(path)
+            if (file.exists() && file.isFile) {
+                file
+            } else {
+                null
+            }
+        }
+    }
+
+    suspend fun deleteImage(path: String) {
     }
 }
