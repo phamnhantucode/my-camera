@@ -36,7 +36,6 @@ fun CropImageView(
                 view?.croppedImageAsync(customOutputUri = event.uri)
             }
         }
-
     }
     AndroidView(
         factory = { context ->
