@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +52,8 @@ fun MyCameraRuler(
     linesColor: Color = Color.Black,
     indicatorColor: Color = Color.Black,
     labelColor: Color = Color.Black,
+    showCircleInitPoint: Boolean = true,
+    keyRecalculate: Any? = null,
     onValueChange: (Int) -> Unit,
 ) {
     val defaultTextStyle =
@@ -72,9 +73,7 @@ fun MyCameraRuler(
     LaunchedEffect(key1 = lineSpacingPx) {
         totalRulerSize = lineSpacingPx * (valueRange.step(stepEachLine).count())
     }
-    var currentValue by remember {
-        mutableIntStateOf(initValue)
-    }
+    var currentValue = initValue
     var rulerOffset by remember {
         mutableStateOf(Offset.Zero)
     }
@@ -82,10 +81,11 @@ fun MyCameraRuler(
         mutableFloatStateOf(0f)
     }
     val centerOffsetX = canvasWidth / 2 - totalRulerSize / 2
-    LaunchedEffect(key1 = canvasWidth, key2 = totalRulerSize) {
+    LaunchedEffect(key1 = canvasWidth, key2 = totalRulerSize, key3 = keyRecalculate) {
         rulerOffset = rulerOffset.copy(
-            canvasWidth / 2 - (lineSpacingPx * (valueRange.first    until initValue).step(stepEachLine).count())
+            canvasWidth / 2 - (lineSpacingPx * (valueRange.first    until initValue).step(stepEachLine).count().coerceAtLeast(0))
         )
+        Log.d("MyCameraRuler", "rulerOffset: ${(valueRange.first until initValue).step(stepEachLine).count()}")
     }
 
     val transformState = rememberTransformableState { _, offset, _ ->
@@ -174,7 +174,7 @@ fun MyCameraRuler(
                     end = Offset(x, size.height - currentLineHeight),
                     strokeWidth = lineThicknessPx
                 )
-                if (lineValue == initValue) {
+                if (lineValue == initValue && showCircleInitPoint) {
                     drawCircle(
                         color = linesColor,
                         center = Offset(x, size.height - lineHeightPx * 2f),

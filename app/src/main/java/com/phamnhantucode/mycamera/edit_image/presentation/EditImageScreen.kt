@@ -1,6 +1,5 @@
 package com.phamnhantucode.mycamera.edit_image.presentation
 
-import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeOut
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.phamnhantucode.mycamera.core.presentation.components.ActionGroupButtons
 import com.phamnhantucode.mycamera.core.presentation.utils.sharedImages
+import com.phamnhantucode.mycamera.edit_image.presentation.components.AdjustmentActionButtons
 import com.phamnhantucode.mycamera.edit_image.presentation.components.CropImageView
 import com.phamnhantucode.mycamera.edit_image.presentation.components.CropRotateActionButtons
 import com.phamnhantucode.mycamera.edit_image.presentation.components.EditActionButtons
@@ -52,14 +52,14 @@ fun EditImageScreen(
     state: EditImageState,
     viewModel: EditImageViewModel = koinViewModel()
 ) {
-    if (state.image != null) {
+    if (state.originImage != null) {
         var size by remember {
             mutableStateOf(IntSize(0, 0))
         }
         var scale by remember { mutableFloatStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
         val imageRatio = remember {
-            state.image.width.toFloat() / state.image.height.toFloat()
+            state.originImage.width.toFloat() / state.originImage.height.toFloat()
         }
 
         val transformState = rememberTransformableState { zoomChange, offsetChange, _ ->
@@ -102,40 +102,86 @@ fun EditImageScreen(
                             modifier = modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .padding(it)
                         ) {
-                            val cropRotateState by viewModel.cropRotateState.collectAsStateWithLifecycle()
-                            CropImageView(
-                                imageBitmap = state.image,
-                                state =
-                                cropRotateState,
-                                modifier = Modifier
-                                    .align(Alignment.Center),
-                                viewModel = viewModel,
-                                onCropImageComplete = {uri ->
-                                    viewModel.onImageAction(EditImageAction.LoadImage(uri.path ?: ""))
+                            when (state.editType) {
+                                EditType.CROP -> {
+                                    val cropRotateState by viewModel.cropRotateState.collectAsStateWithLifecycle()
+                                    CropImageView(
+                                        imageBitmap = state.originImage,
+                                        state =
+                                        cropRotateState,
+                                        modifier = Modifier
+                                            .align(Alignment.Center),
+                                        viewModel = viewModel,
+                                        onCropImageComplete = { uri ->
+                                            viewModel.onImageAction(
+                                                EditImageAction.LoadImage(
+                                                    uri.path ?: ""
+                                                )
+                                            )
+                                        }
+                                    )
                                 }
-                            )
+
+                                else -> {
+                                    if (state.editedImage != null) {
+                                        Image(
+                                            bitmap = state.editedImage,
+                                            contentDescription = "",
+                                            contentScale = ContentScale.Fit,
+                                            modifier = Modifier.align(Alignment.Center)
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .align(Alignment.Center)
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
+                                    }
+                                }
+                            }
                         }
                         Column(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                                 .fillMaxWidth()
                         ) {
-                            CropRotateActionButtons(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                contentColor = Color.White,
-                                onRotateLeft = {
-                                    viewModel.onCropRotateAction(CropRotateAction.RotateLeft90Degrees)
-                                },
-                                onRotateDegree = {
-                                    viewModel.onCropRotateAction(CropRotateAction.Rotate(it))
-                                },
-                                onFlip = {
-                                    viewModel.onCropRotateAction(CropRotateAction.Flip)
+                            when (state.editType) {
+                                EditType.CROP -> {
+                                    CropRotateActionButtons(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        contentColor = Color.White,
+                                        onRotateLeft = {
+                                            viewModel.onCropRotateAction(CropRotateAction.RotateLeft90Degrees)
+                                        },
+                                        onRotateDegree = { degree ->
+                                            viewModel.onCropRotateAction(
+                                                CropRotateAction.Rotate(
+                                                    degree
+                                                )
+                                            )
+                                        },
+                                        onFlip = {
+                                            viewModel.onCropRotateAction(CropRotateAction.Flip)
+                                        }
+                                    )
                                 }
-                            )
+
+                                EditType.ADJUSTMENT -> {
+                                    val adjustmentState by viewModel.adjustmentState.collectAsStateWithLifecycle()
+                                    AdjustmentActionButtons(
+                                        viewModel = viewModel,
+                                        state = adjustmentState,
+                                    )
+                                }
+
+                                EditType.FILTER -> {
+
+                                }
+                            }
                             Spacer(modifier = Modifier.size(8.dp))
                             EditActionButtons(
                                 modifier = Modifier
@@ -160,7 +206,7 @@ fun EditImageScreen(
                             .onSizeChanged { size = it }
                     ) {
                         Image(
-                            bitmap = state.image,
+                            bitmap = state.originImage,
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             modifier = Modifier

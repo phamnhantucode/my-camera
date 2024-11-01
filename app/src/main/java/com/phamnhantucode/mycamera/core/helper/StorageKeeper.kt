@@ -2,9 +2,7 @@ package com.phamnhantucode.mycamera.core.helper
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -91,6 +89,13 @@ class StorageKeeper(
             )
             fileName += UUID.randomUUID().toString()
             val file = File(context.filesDir, "$fileName.jpeg")
+            Uri.fromFile(file)
+        }
+    }
+
+    suspend fun generateCacheImageUri(): Uri {
+        return withContext(Dispatchers.IO) {
+            val file = File(context.cacheDir, "cache.jpeg")
             Uri.fromFile(file)
         }
     }

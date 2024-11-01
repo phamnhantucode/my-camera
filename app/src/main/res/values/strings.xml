@@ -9,4 +9,11 @@
     <string name="back">Back</string>
     <string name="save_a_copy">Save a copy</string>
     <string name="save_with_replace">Save with replace</string>
+    <string name="brightness">Brightness</string>
+    <string name="contrast">Contrast</string>
+    <string name="saturation">Saturation</string>
+    <string name="warmth">Warmth</string>
+    <string name="sharpness">Sharpness</string>
+    <string name="shadow">Shadow</string>
+    <string name="blur">Blur</string>
 </resources>
