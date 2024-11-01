@@ -1,5 +1,6 @@
 package com.phamnhantucode.mycamera.edit_image.presentation.components
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -90,17 +91,18 @@ fun MyCameraRuler(
     val transformState = rememberTransformableState { _, offset, _ ->
         rulerOffset = rulerOffset.copy(
             x = (rulerOffset.x + offset.x * (scrollSpeed.value / 10f)).coerceIn(
-                -(totalRulerSize - canvasWidth / 2),
+                -(totalRulerSize - canvasWidth / 2) + lineSpacingPx,
                 canvasWidth/2,
             )
         )
         currentValue = normalizeToRange(
             values = rulerOffset.x,
             inputMin = canvasWidth / 2,
-            inputMax = -(totalRulerSize - canvasWidth / 2),
+            inputMax = -(totalRulerSize - canvasWidth / 2) + lineSpacingPx,
             outputMin = valueRange.first.toFloat(),
             outputMax = valueRange.last.toFloat()
         ).toInt().coerceIn(valueRange)
+        Log.d("MyCameraRuler", "currentValue: $currentValue rulerOffset: $rulerOffset cavasWidth: $canvasWidth")
         onValueChange(currentValue)
     }
 

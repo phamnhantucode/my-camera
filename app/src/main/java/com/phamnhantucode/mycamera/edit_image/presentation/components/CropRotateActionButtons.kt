@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -27,8 +26,9 @@ import com.phamnhantucode.mycamera.R
 fun CropRotateActionButtons(
     modifier: Modifier = Modifier,
     contentColor: Color = Color.White,
-    onRotate: () -> Unit = {},
-    onFlip: () -> Unit = {}
+    onRotateLeft: () -> Unit = {},
+    onFlip: () -> Unit = {},
+    onRotateDegree: (Int) -> Unit = {}
 ) {
     Column(
         modifier = modifier,
@@ -42,7 +42,7 @@ fun CropRotateActionButtons(
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             IconButton(
-                onClick = onRotate
+                onClick = onRotateLeft
             ) {
                 Icon(
                     imageVector = ImageVector.vectorResource(R.drawable.ic_rotate_left),
@@ -73,7 +73,9 @@ fun CropRotateActionButtons(
             labelColor = contentColor,
             initValue = 0,
             lineHeight = 8.dp,
-            onValueChange = {}
+            onValueChange = {
+                onRotateDegree(it/10)
+            }
         )
 
     }

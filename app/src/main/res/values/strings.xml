@@ -5,4 +5,8 @@
     <string name="delete">Delete</string>
     <string name="share">Share</string>
     <string name="edit">Edit</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
+    <string name="save_a_copy">Save a copy</string>
+    <string name="save_with_replace">Save with replace</string>
 </resources>

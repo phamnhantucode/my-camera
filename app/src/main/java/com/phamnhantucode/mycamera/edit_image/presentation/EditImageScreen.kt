@@ -1,5 +1,6 @@
 package com.phamnhantucode.mycamera.edit_image.presentation
 
+import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeOut
@@ -36,11 +37,13 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.phamnhantucode.mycamera.core.presentation.components.ActionGroupButtons
 import com.phamnhantucode.mycamera.core.presentation.utils.sharedImages
 import com.phamnhantucode.mycamera.edit_image.presentation.components.CropImageView
 import com.phamnhantucode.mycamera.edit_image.presentation.components.CropRotateActionButtons
 import com.phamnhantucode.mycamera.edit_image.presentation.components.EditActionButtons
+import com.phamnhantucode.mycamera.edit_image.presentation.components.TopActionButton
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -83,16 +86,35 @@ fun EditImageScreen(
                             .background(Color.Black),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
+                        TopActionButton(
+                            modifier = Modifier
+                                .padding(top = 16.dp)
+                                .fillMaxWidth(),
+                            onSaveACopy = {
+                                viewModel.onImageAction(EditImageAction.SaveWithNew)
+                            },
+                            onBack = {
+                                viewModel.onImageAction(EditImageAction.BackToOriginal)
+                            },
+
+                            )
                         Box(
                             modifier = modifier
                                 .weight(1f)
                                 .fillMaxWidth()
                                 .padding(it)
                         ) {
+                            val cropRotateState by viewModel.cropRotateState.collectAsStateWithLifecycle()
                             CropImageView(
                                 imageBitmap = state.image,
+                                state =
+                                cropRotateState,
                                 modifier = Modifier
-                                    .align(Alignment.Center)
+                                    .align(Alignment.Center),
+                                viewModel = viewModel,
+                                onCropImageComplete = {uri ->
+                                    viewModel.onImageAction(EditImageAction.LoadImage(uri.path ?: ""))
+                                }
                             )
                         }
                         Column(
@@ -104,9 +126,14 @@ fun EditImageScreen(
                                 modifier = Modifier
                                     .fillMaxWidth(),
                                 contentColor = Color.White,
-                                onRotate = {
+                                onRotateLeft = {
+                                    viewModel.onCropRotateAction(CropRotateAction.RotateLeft90Degrees)
+                                },
+                                onRotateDegree = {
+                                    viewModel.onCropRotateAction(CropRotateAction.Rotate(it))
                                 },
                                 onFlip = {
+                                    viewModel.onCropRotateAction(CropRotateAction.Flip)
                                 }
                             )
                             Spacer(modifier = Modifier.size(8.dp))
@@ -127,7 +154,7 @@ fun EditImageScreen(
                             .fillMaxSize()
                             .pointerInput(Unit) {
                                 detectTapGestures {
-                                    viewModel.onAction(EditImageAction.ClickedImage)
+                                    viewModel.onImageAction(EditImageAction.ClickedImage)
                                 }
                             }
                             .onSizeChanged { size = it }
@@ -161,10 +188,10 @@ fun EditImageScreen(
                                     sharedImages(context, listOf(viewModel.getImageUri(context)))
                                 },
                                 onDelete = {
-                                    viewModel.onAction(EditImageAction.DeleteImage)
+                                    viewModel.onImageAction(EditImageAction.DeleteImage)
                                 },
                                 onEdit = {
-                                    viewModel.onAction(EditImageAction.EditImage)
+                                    viewModel.onImageAction(EditImageAction.EditImage)
                                 }
                             )
 

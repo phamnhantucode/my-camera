@@ -3,6 +3,7 @@ package com.phamnhantucode.mycamera.core.helper
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.compose.ui.graphics.ImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -81,5 +82,16 @@ class StorageKeeper(
     }
 
     suspend fun deleteImage(path: String) {
+    }
+
+    suspend fun generateNewImageUri(): Uri {
+        return withContext(Dispatchers.IO) {
+            var fileName = ZonedDateTime.now().format(
+                DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+            )
+            fileName += UUID.randomUUID().toString()
+            val file = File(context.filesDir, "$fileName.jpeg")
+            Uri.fromFile(file)
+        }
     }
 }
