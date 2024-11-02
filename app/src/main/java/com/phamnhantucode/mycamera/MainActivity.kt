@@ -1,5 +1,6 @@
 package com.phamnhantucode.mycamera
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +17,7 @@ import com.phamnhantucode.mycamera.camera.presentation.CameraScreen
 import com.phamnhantucode.mycamera.camera.presentation.CameraUiEvent
 import com.phamnhantucode.mycamera.camera.presentation.CameraViewModel
 import com.phamnhantucode.mycamera.core.helper.PermissionHelper
+import com.phamnhantucode.mycamera.core.helper.SystemUIController
 import com.phamnhantucode.mycamera.core.navigation.AppNavHost
 import com.phamnhantucode.mycamera.core.navigation.ScreenRoutes
 import com.phamnhantucode.mycamera.core.presentation.ObserveAsEvents
@@ -29,7 +31,11 @@ import com.phamnhantucode.mycamera.list_images.presentation.ListImagesViewModel
 import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        lateinit var systemUIController: SystemUIController
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
+        systemUIController = SystemUIController(this)
         super.onCreate(savedInstanceState)
         PermissionHelper.requestCameraPermissions(this, 0)
         enableEdgeToEdge()

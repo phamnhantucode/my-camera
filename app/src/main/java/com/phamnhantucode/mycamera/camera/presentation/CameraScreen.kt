@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -246,7 +247,7 @@ private fun CameraOptions(
                         contentDescription = localContext.getString(R.string.camera_net),
                         modifier = Modifier.size(20.dp),
                         tint = if (state.enableCameraNet) {
-                            MaterialTheme.colorScheme.primary
+                            Color.Yellow
                         } else {
                             MaterialTheme.colorScheme.surface
                         }
@@ -284,7 +285,7 @@ private fun CameraFlashMode(
                     contentDescription = "Flash ${flashState.name}",
                     modifier = Modifier.size(20.dp),
                     tint = if (currentFlashMode == flashState) {
-                        MaterialTheme.colorScheme.primary
+                        Color.Yellow
                     } else {
                         MaterialTheme.colorScheme.surface
                     }

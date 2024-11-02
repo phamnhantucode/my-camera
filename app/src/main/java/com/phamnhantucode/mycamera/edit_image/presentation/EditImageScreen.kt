@@ -57,7 +57,6 @@ import com.phamnhantucode.mycamera.edit_image.presentation.components.EditAction
 import com.phamnhantucode.mycamera.edit_image.presentation.components.TopActionButton
 import com.phamnhantucode.mycamera.edit_image.presentation.crop.CropRotateAction
 import org.koin.androidx.compose.koinViewModel
-
 @Composable
 fun EditImageScreen(
     modifier: Modifier = Modifier,
@@ -65,14 +64,17 @@ fun EditImageScreen(
     viewModel: EditImageViewModel = koinViewModel()
 ) {
     if (state.originImage != null) {
-        Scaffold {
+        Scaffold{
+            val innerPadding = remember {
+                it
+            }
             when (state.isEditing) {
                 true -> {
                     Column(
                         modifier = Modifier
-                            .padding(it)
-                            .fillMaxSize()
-                            .background(Color.Black),
+                            .background(Color.Black)
+                            .padding(innerPadding)
+                            .fillMaxSize(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         TopActionButton(
@@ -106,7 +108,7 @@ fun EditImageScreen(
                 }
 
                 else -> {
-                    ImagePreview(state.originImage, modifier, it, viewModel, state)
+                    ImagePreview(state.originImage, modifier, innerPadding, viewModel, state)
                 }
             }
         }
@@ -216,7 +218,7 @@ private fun imageViewAfterEditEffect(
 private fun ImagePreview(
     originImage: ImageBitmap,
     modifier: Modifier,
-    it: PaddingValues,
+    innerPadding: PaddingValues,
     viewModel: EditImageViewModel,
     state: EditImageState
 ) {
@@ -244,7 +246,7 @@ private fun ImagePreview(
     }
     Box(
         modifier = modifier
-            .padding(it)
+            .padding(innerPadding)
             .fillMaxSize()
             .pointerInput(Unit) {
                 detectTapGestures {
@@ -253,19 +255,6 @@ private fun ImagePreview(
             }
             .onSizeChanged { size = it }
     ) {
-        AnimatedVisibility(visible = state.isShowingActionButtons) {
-            Row {
-                IconButton(onClick = {
-                    viewModel.onImageAction(EditImageAction.BackNavigate)
-                }) {
-                    val context = LocalContext.current
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = getString(context, R.string.back)
-                    )
-                }
-            }
-        }
         Image(
             bitmap = state.originImage!!,
             contentDescription = null,
@@ -280,6 +269,19 @@ private fun ImagePreview(
                 )
                 .transformable(state = transformState)
         )
+        AnimatedVisibility(visible = state.isShowingActionButtons) {
+            Row {
+                IconButton(onClick = {
+                    viewModel.onImageAction(EditImageAction.BackNavigate)
+                }) {
+                    val context = LocalContext.current
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = getString(context, R.string.back)
+                    )
+                }
+            }
+        }
         AnimatedVisibility(
             visible = state.isShowingActionButtons,
             enter = expandIn(expandFrom = Alignment.BottomCenter),

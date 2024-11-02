@@ -79,7 +79,7 @@ class EditImageViewModel(
                         )
                     }
                 EditImageAction.EditImage -> _state.update {
-                        it.copy(isEditing = true)
+                        it.copy(isEditing = true, isShowingActionButtons = false)
                     }
                 EditImageAction.DeleteImage -> {
                     storageKeeper.deleteImage(fileImage.absolutePath)
