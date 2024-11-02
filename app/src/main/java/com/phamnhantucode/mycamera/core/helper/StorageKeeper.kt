@@ -14,6 +14,7 @@ import java.util.UUID
 class StorageKeeper(
     private val context: Context
 ) {
+
     suspend fun saveNewImage(path: String, bitmap: Bitmap, onSaved: (String) -> Unit) {
         withContext(Dispatchers.IO) {
             var fileName = ZonedDateTime.now().format(

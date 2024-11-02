@@ -16,5 +16,4 @@ data class EditImageState(
     val isEditing: Boolean = false,
     val isShowingActionButtons: Boolean = false,
     val editType: EditType = EditType.CROP,
-    val isWaitingCropImageSuccess: Boolean = false,
 )

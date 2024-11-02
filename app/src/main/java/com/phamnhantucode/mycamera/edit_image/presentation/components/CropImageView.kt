@@ -40,20 +40,6 @@ fun CropImageView(
             imageBitmap.height
         )
     }
-    ObserveAsEvents(events = viewModel.events) { event ->
-        when (event) {
-            is EditImageEvent.CropImage -> {
-                if (viewModel.state.value.isEditing) {
-                    view?.setImageBitmap(
-                        viewModel.state.value.originImage?.asAndroidBitmap()
-                    )
-                    view?.cropRect = event.rect ?: defaultRect
-                }
-                view?.croppedImageAsync(customOutputUri = event.uri)
-            }
-            else -> {}
-        }
-    }
     AndroidView(
         factory = { context ->
             view = CropImageView(
@@ -77,6 +63,16 @@ fun CropImageView(
                         )
                     }
                 }
+
+            }
+            viewModel.setCropImageFunction {rect, uri ->
+                if (viewModel.state.value.isEditing) {
+                    view?.setImageBitmap(
+                        viewModel.state.value.originImage?.asAndroidBitmap()
+                    )
+                    view?.cropRect = rect?: defaultRect
+                }
+                view?.croppedImageAsync(customOutputUri = uri)
             }
             view!!
         },

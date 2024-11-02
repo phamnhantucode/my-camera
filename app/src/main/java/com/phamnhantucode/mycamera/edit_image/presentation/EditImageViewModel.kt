@@ -8,8 +8,8 @@ import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.Rect
 import android.net.Uri
-import android.util.Log
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.FileProvider
@@ -50,6 +50,8 @@ class EditImageViewModel(
     val events = _events.receiveAsFlow()
 
     private lateinit var fileImage: File
+
+    private var isWaitingCropImageSuccess: Boolean = false
     private var actionInvokeWhenWaitingCropImageSuccess: (() -> Unit)? = null
     private val throttleAdjustment = throttle(200L) {
         val bitmap = _state.value.croppedImage
@@ -62,6 +64,8 @@ class EditImageViewModel(
         }
     }
 
+    private var cropImageFunction: ((Rect?, Uri) -> Unit)? = null
+
     fun onImageAction(action: EditImageAction) {
         viewModelScope.launch {
             when (action) {
@@ -70,8 +74,7 @@ class EditImageViewModel(
                 is EditImageAction.LoadEditedImage -> _state.update {
                         it.copy(
                             croppedImage = action.uri.let { uri ->
-                                fileImage = File(uri.path!!)
-                                BitmapFactory.decodeFile(fileImage.absolutePath).asImageBitmap()
+                                BitmapFactory.decodeFile(File(uri.path!!).absolutePath).asImageBitmap()
                             }
                         )
                     }
@@ -103,12 +106,7 @@ class EditImageViewModel(
                 EditImageAction.SaveWithOverwrite -> saveImage(isOverwrite = true)
                 is EditImageAction.ChangeEditType -> {
                     if (_state.value.editType == EditType.CROP && action.type != EditType.CROP) {
-                        _events.send(
-                            EditImageEvent.CropImage(
-                                storageKeeper.generateCacheImageUri(),
-                                _cropRotateState.value.cropRect
-                            )
-                        )
+                        cropImageFunction?.invoke(_cropRotateState.value.cropRect, storageKeeper.generateCacheImageUri())
                     }
                     if (action.type == EditType.CROP) {
                         _state.update { state ->
@@ -129,34 +127,31 @@ class EditImageViewModel(
     }
 
     private suspend fun saveImage(isOverwrite: Boolean) {
-        _state.update {
-            it.copy(isEditing = false)
+        val onSavingSuccess = {
+            _state.update {
+                it.copy(isEditing = false)
+            }
         }
         if (state.value.editedImage == null) {
-            _events.send(
-                EditImageEvent.CropImage(
-                    storageKeeper.generateCacheImageUri(),
-                    _cropRotateState.value.cropRect
-                )
-            )
-            _state.update {
-                it.copy(isWaitingCropImageSuccess = true)
-            }
+            isWaitingCropImageSuccess = true
+            cropImageFunction?.invoke(_cropRotateState.value.cropRect, storageKeeper.generateCacheImageUri())
             actionInvokeWhenWaitingCropImageSuccess = {
                 viewModelScope.launch {
                     if (isOverwrite) {
                         storageKeeper.saveOverwriteImage(
-                            fileImage.path,
+                            fileImage.absolutePath,
                             _state.value.editedImage!!.asAndroidBitmap()
-                        ) {
-                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                        ) {newPath ->
+                            onImageAction(EditImageAction.LoadImage(newPath))
+                            onSavingSuccess()
                         }
                     } else {
                         storageKeeper.saveNewImage(
                             fileImage.parent!!,
                             _state.value.editedImage!!.asAndroidBitmap()
-                        ) {
-                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                        ) {newPath ->
+                            onImageAction(EditImageAction.LoadImage(newPath))
+                            onSavingSuccess()
                         }
                     }
                 }
@@ -164,17 +159,19 @@ class EditImageViewModel(
         } else {
             if (isOverwrite) {
                 storageKeeper.saveOverwriteImage(
-                    fileImage.path,
+                    fileImage.absolutePath,
                     _state.value.editedImage!!.asAndroidBitmap()
-                ) {
-                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                ) {newPath ->
+                    onImageAction(EditImageAction.LoadImage(newPath))
+                    onSavingSuccess()
                 }
             } else {
                 storageKeeper.saveNewImage(
                     fileImage.parent!!,
                     _state.value.editedImage!!.asAndroidBitmap()
-                ) {
-                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                ) {newPath ->
+                    onImageAction(EditImageAction.LoadImage(newPath))
+                    onSavingSuccess()
                 }
             }
         }
@@ -184,10 +181,9 @@ class EditImageViewModel(
         _state.update {
             if (it.isEditing) {
                 val image = storageKeeper.getImage(action.path)?.let { file ->
-                    fileImage = file
                     BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
                 }
-                it.copy(
+                return@update it.copy(
                     croppedImage = image,
                     editedImage = image?.let { img -> adjustEditedImage(img.asAndroidBitmap()).asImageBitmap() },
                 )
@@ -196,7 +192,7 @@ class EditImageViewModel(
                     fileImage = file
                     BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
                 }
-                EditImageState(
+                return@update EditImageState(
                     originImage = image,
                     originImageApplyEditState = image?.let { img ->
                         adjustEditedImage(
@@ -214,9 +210,10 @@ class EditImageViewModel(
                 AdjustmentState()
             }
         } else {
-            if (state.value.isWaitingCropImageSuccess) {
+            if (isWaitingCropImageSuccess) {
                 actionInvokeWhenWaitingCropImageSuccess?.invoke()
                 actionInvokeWhenWaitingCropImageSuccess = null
+                isWaitingCropImageSuccess = false
             }
         }
     }
@@ -465,4 +462,7 @@ class EditImageViewModel(
         return outputBitmap
     }
 
+    fun setCropImageFunction(cropImageFunction: (Rect?, Uri) -> Unit) {
+        this.cropImageFunction = cropImageFunction
+    }
 }
