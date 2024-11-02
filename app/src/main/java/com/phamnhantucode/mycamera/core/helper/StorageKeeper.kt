@@ -94,6 +94,12 @@ class StorageKeeper(
     }
 
     suspend fun deleteImage(path: String) {
+        withContext(Dispatchers.IO) {
+            val file = File(path)
+            if (file.exists()) {
+                file.delete()
+            }
+        }
     }
 
     suspend fun generateNewImageUri(): Uri {

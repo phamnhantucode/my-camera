@@ -1,16 +1,11 @@
 package com.phamnhantucode.mycamera.core.navigation
 
-import android.view.View
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.ViewCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -26,6 +21,7 @@ import com.phamnhantucode.mycamera.edit_image.presentation.EditImageAction
 import com.phamnhantucode.mycamera.edit_image.presentation.EditImageEvent
 import com.phamnhantucode.mycamera.edit_image.presentation.EditImageScreen
 import com.phamnhantucode.mycamera.edit_image.presentation.EditImageViewModel
+import com.phamnhantucode.mycamera.list_images.presentation.ListImagesAction
 import com.phamnhantucode.mycamera.list_images.presentation.ListImagesEvent
 import com.phamnhantucode.mycamera.list_images.presentation.ListImagesScreen
 import com.phamnhantucode.mycamera.list_images.presentation.ListImagesViewModel
@@ -61,14 +57,15 @@ fun AppNavHost(
         }
         composable<ScreenRoutes.ListImagesScreen> {
             val surfaceColor = MaterialTheme.colorScheme.surface.toArgb()
+            val viewModel = koinViewModel<ListImagesViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
             LaunchedEffect(true) {
                 MainActivity.systemUIController.apply {
                     showSystemUI()
                     setSystemBarsColor(surfaceColor)
                 }
+                viewModel.getImages()
             }
-            val viewModel = koinViewModel<ListImagesViewModel>()
-            val state by viewModel.state.collectAsStateWithLifecycle()
             ObserveAsEvents(events = viewModel.events) { event ->
                 when (event) {
                     ListImagesEvent.BackNavigate -> navController.popBackStack()
@@ -101,7 +98,6 @@ fun AppNavHost(
             ObserveAsEvents(events = viewModel.events) { event ->
                 when (event) {
                     EditImageEvent.BackNavigate -> navController.popBackStack()
-                    else -> {}
                 }
             }
             EditImageScreen(

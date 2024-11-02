@@ -67,6 +67,7 @@ fun ListImagesScreen(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(4.dp)
             ) {
                 items(state.images.size, key = { it }) { index ->
                     MyImageItem(

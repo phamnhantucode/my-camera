@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
@@ -49,12 +50,14 @@ fun MyImageItem(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp))
             .aspectRatio(1f)
             .combinedClickable(
                 onLongClick = onImageLongPress,
                 onClick = onImageClick
             )
             .border(
+                shape = RoundedCornerShape(8.dp),
                 width = 0.2.dp,
                 color = MaterialTheme.colorScheme.surface,
             )

@@ -70,6 +70,7 @@ fun CameraScreen(
         }
         LaunchedEffect(state.cameraSelector) {
             handleCameraControllerState(cameraController, state)
+            cameraController.isTapToFocusEnabled = true
         }
         Box(
             modifier = Modifier.fillMaxSize()

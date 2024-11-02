@@ -83,9 +83,7 @@ class EditImageViewModel(
                     }
                 EditImageAction.DeleteImage -> {
                     storageKeeper.deleteImage(fileImage.absolutePath)
-                    _state.update {
-                        it.copy(originImage = null)
-                    }
+                    _events.send(EditImageEvent.BackNavigate)
                 }
                 EditImageAction.ClickedImage -> _state.update {
                         it.copy(isShowingActionButtons = !it.isShowingActionButtons)

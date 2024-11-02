@@ -23,7 +23,6 @@ class ListImagesViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ListImagesState())
     val state = _state
-        .onStart { getImages() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListImagesState())
 
     private val _events = Channel<ListImagesEvent>()
@@ -32,7 +31,7 @@ class ListImagesViewModel(
 
     private var fileImages = emptyList<File>()
 
-    private fun getImages() {
+    fun getImages() {
         viewModelScope.launch {
             fileImages = storageKeeper.getImages()
             _state.update {
