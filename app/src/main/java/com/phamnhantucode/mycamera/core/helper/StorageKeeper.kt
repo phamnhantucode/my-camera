@@ -2,6 +2,7 @@ package com.phamnhantucode.mycamera.core.helper
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,7 +44,7 @@ class StorageKeeper(
     }
 
     suspend fun getImages(): List<File> {
-       return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
             val dir = File(context.filesDir.absolutePath)
             if (dir.exists() && dir.isDirectory) {
                 dir.listFiles()?.mapNotNull { file ->
@@ -109,6 +110,23 @@ class StorageKeeper(
         return withContext(Dispatchers.IO) {
             val file = File(context.cacheDir, "cache.jpeg")
             Uri.fromFile(file)
+        }
+    }
+
+    suspend fun getNewestImage(): Bitmap? {
+        return withContext(Dispatchers.IO) {
+            val dir = File(context.filesDir.absolutePath)
+            if (dir.exists() && dir.isDirectory) {
+                dir.listFiles()?.filter { file ->
+                    file.isFile && file.extension.equals("jpeg", true)
+                }?.maxByOrNull { file ->
+                    file.lastModified()
+                }?.let { file ->
+                    return@withContext BitmapFactory.decodeFile(file.absolutePath)
+                }
+            } else {
+                return@withContext null
+            }
         }
     }
 }

@@ -16,4 +16,8 @@
     <string name="sharpness">Sharpness</string>
     <string name="shadow">Shadow</string>
     <string name="blur">Blur</string>
+    <string name="newest_image_capture">Newest image capture</string>
+    <string name="switch_camera">Switch camera</string>
+    <string name="flash_mode">Flash mode</string>
+    <string name="camera_net">Camera net</string>
 </resources>
