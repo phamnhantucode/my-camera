@@ -8,9 +8,11 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.phamnhantucode.mycamera.core.helper.StorageKeeper
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,6 +25,10 @@ class ListImagesViewModel(
     val state = _state
         .onStart { getImages() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListImagesState())
+
+    private val _events = Channel<ListImagesEvent>()
+    val events = _events
+        .receiveAsFlow()
 
     private var fileImages = emptyList<File>()
 
@@ -53,11 +59,13 @@ class ListImagesViewModel(
                         )
                     }
                 }
+
                 ListImagesAction.ClearSelectedImages -> {
                     _state.update {
                         it.copy(selectedImagesIndex = emptyList())
                     }
                 }
+
                 is ListImagesAction.DeleteSelectedImages -> {
                     try {
                         storageKeeper.deleteImagesByFiles(
@@ -75,7 +83,14 @@ class ListImagesViewModel(
                         )
                     }
                 }
-                is ListImagesAction.OpenImage -> TODO()
+
+                is ListImagesAction.OpenImage -> {
+                    _events.send(ListImagesEvent.NavigateToEditImage(fileImages[action.index].absolutePath))
+                }
+
+                ListImagesAction.BackNavigate -> {
+                    _events.send(ListImagesEvent.BackNavigate)
+                }
             }
         }
     }

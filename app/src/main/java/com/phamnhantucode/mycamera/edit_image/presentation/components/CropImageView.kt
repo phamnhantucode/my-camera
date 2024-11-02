@@ -51,6 +51,7 @@ fun CropImageView(
                 }
                 view?.croppedImageAsync(customOutputUri = event.uri)
             }
+            else -> {}
         }
     }
     AndroidView(

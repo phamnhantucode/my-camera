@@ -5,4 +5,5 @@ import android.graphics.Bitmap
 sealed class CameraAction {
     data class TakenPicture(val pictureTaken: Bitmap, val path: String) : CameraAction()
     data object SwitchCamera : CameraAction()
+    data object NavigateToListImages : CameraAction()
 }

@@ -65,49 +65,9 @@ class EditImageViewModel(
     fun onImageAction(action: EditImageAction) {
         viewModelScope.launch {
             when (action) {
-                is EditImageAction.LoadImage -> {
-                    _state.update {
-                        if (it.isEditing) {
-                            val image = storageKeeper.getImage(action.path)?.let { file ->
-                                fileImage = file
-                                BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
-                            }
-                            it.copy(
-                                croppedImage = image,
-                                editedImage = image?.let { img -> adjustEditedImage(img.asAndroidBitmap()).asImageBitmap() },
-                            )
-                        } else {
-                            val image = storageKeeper.getImage(action.path)?.let { file ->
-                                fileImage = file
-                                BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
-                            }
-                            EditImageState(
-                                originImage = image,
-                                originImageApplyEditState = image?.let { img ->
-                                    adjustEditedImage(
-                                        img.asAndroidBitmap()
-                                    ).asImageBitmap()
-                                },
-                            )
-                        }
-                    }
-                    if (!_state.value.isEditing) {
-                        _cropRotateState.update {
-                            CropRotateState()
-                        }
-                        _adjustmentState.update {
-                            AdjustmentState()
-                        }
-                    } else {
-                        if (state.value.isWaitingCropImageSuccess) {
-                            actionInvokeWhenWaitingCropImageSuccess?.invoke()
-                            actionInvokeWhenWaitingCropImageSuccess = null
-                        }
-                    }
-                }
-
-                is EditImageAction.LoadEditedImage -> {
-                    _state.update {
+                is EditImageAction.LoadImage ->
+                    actionLoadImage(action)
+                is EditImageAction.LoadEditedImage -> _state.update {
                         it.copy(
                             croppedImage = action.uri.let { uri ->
                                 fileImage = File(uri.path!!)
@@ -115,32 +75,18 @@ class EditImageViewModel(
                             }
                         )
                     }
-
-                }
-
-                EditImageAction.EditImage -> {
-                    _state.update {
+                EditImageAction.EditImage -> _state.update {
                         it.copy(isEditing = true)
                     }
-                }
-
                 EditImageAction.DeleteImage -> {
                     storageKeeper.deleteImage(fileImage.absolutePath)
                     _state.update {
                         it.copy(originImage = null)
                     }
                 }
-
-                EditImageAction.ClickedImage -> {
-                    Log.d(
-                        "EditImageViewModel",
-                        "Clicked image: ${_state.value.isShowingActionButtons}"
-                    )
-                    _state.update {
+                EditImageAction.ClickedImage -> _state.update {
                         it.copy(isShowingActionButtons = !it.isShowingActionButtons)
                     }
-                }
-
                 EditImageAction.BackToOriginal -> {
                     _state.update {
                         EditImageState(
@@ -153,63 +99,8 @@ class EditImageViewModel(
                         CropRotateState()
                     }
                 }
-
-                EditImageAction.SaveWithNew -> {
-                    _state.update {
-                        it.copy(isEditing = false)
-                    }
-                    if (state.value.editedImage == null) {
-                        _events.send(
-                            EditImageEvent.CropImage(
-                                storageKeeper.generateCacheImageUri(),
-                                _cropRotateState.value.cropRect
-                            )
-                        )
-                        _state.update {
-                            it.copy(isWaitingCropImageSuccess = true)
-                        }
-                        actionInvokeWhenWaitingCropImageSuccess = {
-                            viewModelScope.launch {
-                                storageKeeper.saveNewImage(fileImage.parent!!, _state.value.editedImage!!.asAndroidBitmap()) {
-                                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
-                                }
-                            }
-                        }
-                    } else {
-                        storageKeeper.saveNewImage(fileImage.parent!!, _state.value.editedImage!!.asAndroidBitmap()) {
-                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
-                        }
-                    }
-                }
-
-                EditImageAction.SaveWithOverwrite -> {
-                    _state.update {
-                        it.copy(isEditing = false)
-                    }
-                    if (state.value.editedImage == null) {
-                        _events.send(
-                            EditImageEvent.CropImage(
-                                storageKeeper.generateCacheImageUri(),
-                                _cropRotateState.value.cropRect
-                            )
-                        )
-                        _state.update {
-                            it.copy(isWaitingCropImageSuccess = true)
-                        }
-                        actionInvokeWhenWaitingCropImageSuccess = {
-                            viewModelScope.launch {
-                                storageKeeper.saveOverwriteImage(fileImage.path, _state.value.editedImage!!.asAndroidBitmap()) {
-                                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
-                                }
-                            }
-                        }
-                    } else {
-                        storageKeeper.saveOverwriteImage(fileImage.path, _state.value.editedImage!!.asAndroidBitmap()) {
-                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
-                        }
-                    }
-                }
-
+                EditImageAction.SaveWithNew -> saveImage(isOverwrite = false)
+                EditImageAction.SaveWithOverwrite -> saveImage(isOverwrite = true)
                 is EditImageAction.ChangeEditType -> {
                     if (_state.value.editType == EditType.CROP && action.type != EditType.CROP) {
                         _events.send(
@@ -230,8 +121,103 @@ class EditImageViewModel(
                         it.copy(editType = action.type)
                     }
                 }
+                EditImageAction.BackNavigate -> _events.send(EditImageEvent.BackNavigate)
+
             }
             throttleAdjustment()
+        }
+    }
+
+    private suspend fun saveImage(isOverwrite: Boolean) {
+        _state.update {
+            it.copy(isEditing = false)
+        }
+        if (state.value.editedImage == null) {
+            _events.send(
+                EditImageEvent.CropImage(
+                    storageKeeper.generateCacheImageUri(),
+                    _cropRotateState.value.cropRect
+                )
+            )
+            _state.update {
+                it.copy(isWaitingCropImageSuccess = true)
+            }
+            actionInvokeWhenWaitingCropImageSuccess = {
+                viewModelScope.launch {
+                    if (isOverwrite) {
+                        storageKeeper.saveOverwriteImage(
+                            fileImage.path,
+                            _state.value.editedImage!!.asAndroidBitmap()
+                        ) {
+                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                        }
+                    } else {
+                        storageKeeper.saveNewImage(
+                            fileImage.parent!!,
+                            _state.value.editedImage!!.asAndroidBitmap()
+                        ) {
+                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                        }
+                    }
+                }
+            }
+        } else {
+            if (isOverwrite) {
+                storageKeeper.saveOverwriteImage(
+                    fileImage.path,
+                    _state.value.editedImage!!.asAndroidBitmap()
+                ) {
+                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                }
+            } else {
+                storageKeeper.saveNewImage(
+                    fileImage.parent!!,
+                    _state.value.editedImage!!.asAndroidBitmap()
+                ) {
+                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                }
+            }
+        }
+    }
+
+    private suspend fun actionLoadImage(action: EditImageAction.LoadImage) {
+        _state.update {
+            if (it.isEditing) {
+                val image = storageKeeper.getImage(action.path)?.let { file ->
+                    fileImage = file
+                    BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
+                }
+                it.copy(
+                    croppedImage = image,
+                    editedImage = image?.let { img -> adjustEditedImage(img.asAndroidBitmap()).asImageBitmap() },
+                )
+            } else {
+                val image = storageKeeper.getImage(action.path)?.let { file ->
+                    fileImage = file
+                    BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
+                }
+                EditImageState(
+                    originImage = image,
+                    originImageApplyEditState = image?.let { img ->
+                        adjustEditedImage(
+                            img.asAndroidBitmap()
+                        ).asImageBitmap()
+                    },
+                )
+            }
+        }
+        if (!_state.value.isEditing) {
+            _cropRotateState.update {
+                CropRotateState()
+            }
+            _adjustmentState.update {
+                AdjustmentState()
+            }
+        } else {
+            if (state.value.isWaitingCropImageSuccess) {
+                actionInvokeWhenWaitingCropImageSuccess?.invoke()
+                actionInvokeWhenWaitingCropImageSuccess = null
+            }
         }
     }
 

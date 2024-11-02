@@ -3,6 +3,7 @@
 package com.phamnhantucode.mycamera.list_images.presentation.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,6 +31,20 @@ fun ListImagesAppBar(
     }
     TopAppBar(
         title = { Text(titleString) },
+        navigationIcon = {
+            if (state.selectedImagesIndex.isEmpty()) {
+                IconButton(
+                    onClick = {
+                        viewModel.onAction(ListImagesAction.BackNavigate)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = context.getString(R.string.back)
+                    )
+                }
+            }
+        },
         actions = {
             if (state.selectedImagesIndex.isNotEmpty()) {
                 IconButton(

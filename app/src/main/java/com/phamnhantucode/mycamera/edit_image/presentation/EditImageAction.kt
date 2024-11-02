@@ -11,5 +11,6 @@ sealed interface EditImageAction {
     data object BackToOriginal : EditImageAction
     data object SaveWithOverwrite : EditImageAction
     data object SaveWithNew : EditImageAction
+    data object BackNavigate : EditImageAction
     data class ChangeEditType(val type: EditType) : EditImageAction
 }

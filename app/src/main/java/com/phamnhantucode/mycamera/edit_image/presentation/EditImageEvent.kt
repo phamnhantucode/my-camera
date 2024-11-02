@@ -4,5 +4,6 @@ import android.graphics.Rect
 import android.net.Uri
 
 sealed interface EditImageEvent {
+    data object BackNavigate : EditImageEvent
     data class CropImage(val uri: Uri, val rect: Rect?) : EditImageEvent
 }
