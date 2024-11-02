@@ -44,6 +44,7 @@ import com.phamnhantucode.mycamera.edit_image.presentation.components.CropImageV
 import com.phamnhantucode.mycamera.edit_image.presentation.components.CropRotateActionButtons
 import com.phamnhantucode.mycamera.edit_image.presentation.components.EditActionButtons
 import com.phamnhantucode.mycamera.edit_image.presentation.components.TopActionButton
+import com.phamnhantucode.mycamera.edit_image.presentation.crop.CropRotateAction
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -90,12 +91,15 @@ fun EditImageScreen(
                             modifier = Modifier
                                 .padding(top = 16.dp)
                                 .fillMaxWidth(),
-                            onSaveACopy = {
+                            onSaveWithNew = {
                                 viewModel.onImageAction(EditImageAction.SaveWithNew)
                             },
                             onBack = {
                                 viewModel.onImageAction(EditImageAction.BackToOriginal)
                             },
+                            onSaveWithOverwrite = {
+                                viewModel.onImageAction(EditImageAction.SaveWithOverwrite)
+                            }
 
                             )
                         Box(
@@ -107,7 +111,7 @@ fun EditImageScreen(
                                 EditType.CROP -> {
                                     val cropRotateState by viewModel.cropRotateState.collectAsStateWithLifecycle()
                                     CropImageView(
-                                        imageBitmap = state.originImage,
+                                        imageBitmap = state.originImageApplyEditState ?: state.originImage,
                                         state =
                                         cropRotateState,
                                         modifier = Modifier

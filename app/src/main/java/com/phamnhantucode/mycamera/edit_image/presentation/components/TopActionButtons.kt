@@ -14,8 +14,8 @@ import com.phamnhantucode.mycamera.R
 fun TopActionButton(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onSaveWithReplace: () -> Unit = {},
-    onSaveACopy: () -> Unit = {}
+    onSaveWithOverwrite: () -> Unit = {},
+    onSaveWithNew: () -> Unit = {}
 ) {
     val context = LocalContext.current
     Row(
@@ -25,10 +25,10 @@ fun TopActionButton(
         TextButton(onClick = onBack) {
             Text(getString(context, R.string.back))
         }
-        TextButton(onClick = onSaveACopy) {
+        TextButton(onClick = onSaveWithNew) {
             Text(getString(context, R.string.save_a_copy))
         }
-        TextButton(onClick = onSaveWithReplace) {
+        TextButton(onClick = onSaveWithOverwrite) {
             Text(getString(context, R.string.save_with_replace))
         }
     }

@@ -10,9 +10,11 @@ enum class EditType {
 
 data class EditImageState(
     val originImage: ImageBitmap? = null,
+    val originImageApplyEditState: ImageBitmap? = null,
     val croppedImage: ImageBitmap? = null,
     val editedImage: ImageBitmap? = null,
     val isEditing: Boolean = false,
     val isShowingActionButtons: Boolean = false,
     val editType: EditType = EditType.CROP,
+    val isWaitingCropImageSuccess: Boolean = false,
 )

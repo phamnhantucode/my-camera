@@ -13,7 +13,7 @@ import java.util.UUID
 class StorageKeeper(
     private val context: Context
 ) {
-    suspend fun saveImage(path: String, bitmap: Bitmap, onSaved: (String) -> Unit) {
+    suspend fun saveNewImage(path: String, bitmap: Bitmap, onSaved: (String) -> Unit) {
         withContext(Dispatchers.IO) {
             var fileName = ZonedDateTime.now().format(
                 DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
@@ -21,6 +21,18 @@ class StorageKeeper(
             fileName += UUID.randomUUID().toString()
             fileName += ".jpeg"
             val file = File(path, fileName)
+            val result = bitmap.compress(Bitmap.CompressFormat.JPEG, 100, file.outputStream())
+            if (result) {
+                withContext(Dispatchers.Main) {
+                    onSaved(file.absolutePath)
+                }
+            }
+        }
+    }
+
+    suspend fun saveOverwriteImage(path: String, bitmap: Bitmap, onSaved: (String) -> Unit) {
+        withContext(Dispatchers.IO) {
+            val file = File(path)
             val result = bitmap.compress(Bitmap.CompressFormat.JPEG, 100, file.outputStream())
             if (result) {
                 withContext(Dispatchers.Main) {

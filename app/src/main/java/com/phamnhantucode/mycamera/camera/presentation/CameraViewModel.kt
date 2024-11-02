@@ -22,7 +22,7 @@ class CameraViewModel(
         when (action) {
             is CameraAction.TakenPicture -> {
                 viewModelScope.launch {
-                    storageKeeper.saveImage(
+                    storageKeeper.saveNewImage(
                         action.path,
                         action.pictureTaken
                     ) {

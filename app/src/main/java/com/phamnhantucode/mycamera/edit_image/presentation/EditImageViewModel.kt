@@ -20,17 +20,15 @@ import com.phamnhantucode.mycamera.core.helper.throttle
 import com.phamnhantucode.mycamera.edit_image.presentation.adjustment.AdjustmentAction
 import com.phamnhantucode.mycamera.edit_image.presentation.adjustment.AdjustmentState
 import com.phamnhantucode.mycamera.edit_image.presentation.adjustment.AdjustmentType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.phamnhantucode.mycamera.edit_image.presentation.crop.CropRotateAction
+import com.phamnhantucode.mycamera.edit_image.presentation.crop.CropRotateState
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 
 class EditImageViewModel(
@@ -52,9 +50,16 @@ class EditImageViewModel(
     val events = _events.receiveAsFlow()
 
     private lateinit var fileImage: File
-    var count = 0
-    private val throttleAdjustment = throttle(1000L) {
-        adjustEditedImage()
+    private var actionInvokeWhenWaitingCropImageSuccess: (() -> Unit)? = null
+    private val throttleAdjustment = throttle(200L) {
+        val bitmap = _state.value.croppedImage
+        if (bitmap != null) {
+            _state.update {
+                it.copy(
+                    editedImage = adjustEditedImage(bitmap.asAndroidBitmap()).asImageBitmap()
+                )
+            }
+        }
     }
 
     fun onImageAction(action: EditImageAction) {
@@ -63,22 +68,40 @@ class EditImageViewModel(
                 is EditImageAction.LoadImage -> {
                     _state.update {
                         if (it.isEditing) {
-                            val image = storageKeeper.getImage(action.path)?.let {
-                                fileImage = it
-                                BitmapFactory.decodeFile(it.absolutePath).asImageBitmap()
+                            val image = storageKeeper.getImage(action.path)?.let { file ->
+                                fileImage = file
+                                BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
                             }
                             it.copy(
                                 croppedImage = image,
-                                editedImage = image,
+                                editedImage = image?.let { img -> adjustEditedImage(img.asAndroidBitmap()).asImageBitmap() },
                             )
                         } else {
-
+                            val image = storageKeeper.getImage(action.path)?.let { file ->
+                                fileImage = file
+                                BitmapFactory.decodeFile(file.absolutePath).asImageBitmap()
+                            }
                             EditImageState(
-                                originImage = storageKeeper.getImage(action.path)?.let {
-                                    fileImage = it
-                                    BitmapFactory.decodeFile(it.absolutePath).asImageBitmap()
-                                }
+                                originImage = image,
+                                originImageApplyEditState = image?.let { img ->
+                                    adjustEditedImage(
+                                        img.asAndroidBitmap()
+                                    ).asImageBitmap()
+                                },
                             )
+                        }
+                    }
+                    if (!_state.value.isEditing) {
+                        _cropRotateState.update {
+                            CropRotateState()
+                        }
+                        _adjustmentState.update {
+                            AdjustmentState()
+                        }
+                    } else {
+                        if (state.value.isWaitingCropImageSuccess) {
+                            actionInvokeWhenWaitingCropImageSuccess?.invoke()
+                            actionInvokeWhenWaitingCropImageSuccess = null
                         }
                     }
                 }
@@ -86,8 +109,8 @@ class EditImageViewModel(
                 is EditImageAction.LoadEditedImage -> {
                     _state.update {
                         it.copy(
-                            croppedImage = action.uri.let {
-                                fileImage = File(it.path!!)
+                            croppedImage = action.uri.let { uri ->
+                                fileImage = File(uri.path!!)
                                 BitmapFactory.decodeFile(fileImage.absolutePath).asImageBitmap()
                             }
                         )
@@ -135,20 +158,73 @@ class EditImageViewModel(
                     _state.update {
                         it.copy(isEditing = false)
                     }
-                    val uri = storageKeeper.generateNewImageUri()
-                    _events.send(EditImageEvent.CropImage(uri))
+                    if (state.value.editedImage == null) {
+                        _events.send(
+                            EditImageEvent.CropImage(
+                                storageKeeper.generateCacheImageUri(),
+                                _cropRotateState.value.cropRect
+                            )
+                        )
+                        _state.update {
+                            it.copy(isWaitingCropImageSuccess = true)
+                        }
+                        actionInvokeWhenWaitingCropImageSuccess = {
+                            viewModelScope.launch {
+                                storageKeeper.saveNewImage(fileImage.parent!!, _state.value.editedImage!!.asAndroidBitmap()) {
+                                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                                }
+                            }
+                        }
+                    } else {
+                        storageKeeper.saveNewImage(fileImage.parent!!, _state.value.editedImage!!.asAndroidBitmap()) {
+                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                        }
+                    }
                 }
 
-                EditImageAction.SaveWithReplace -> {
+                EditImageAction.SaveWithOverwrite -> {
                     _state.update {
                         it.copy(isEditing = false)
                     }
-                    _events.send(EditImageEvent.CropImage(Uri.fromFile(fileImage)))
+                    if (state.value.editedImage == null) {
+                        _events.send(
+                            EditImageEvent.CropImage(
+                                storageKeeper.generateCacheImageUri(),
+                                _cropRotateState.value.cropRect
+                            )
+                        )
+                        _state.update {
+                            it.copy(isWaitingCropImageSuccess = true)
+                        }
+                        actionInvokeWhenWaitingCropImageSuccess = {
+                            viewModelScope.launch {
+                                storageKeeper.saveOverwriteImage(fileImage.path, _state.value.editedImage!!.asAndroidBitmap()) {
+                                    onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                                }
+                            }
+                        }
+                    } else {
+                        storageKeeper.saveOverwriteImage(fileImage.path, _state.value.editedImage!!.asAndroidBitmap()) {
+                            onImageAction(EditImageAction.LoadImage(fileImage.absolutePath))
+                        }
+                    }
                 }
 
                 is EditImageAction.ChangeEditType -> {
-                    if (_state.value.editType == EditType.CROP) {
-                        _events.send(EditImageEvent.CropImage(storageKeeper.generateCacheImageUri()))
+                    if (_state.value.editType == EditType.CROP && action.type != EditType.CROP) {
+                        _events.send(
+                            EditImageEvent.CropImage(
+                                storageKeeper.generateCacheImageUri(),
+                                _cropRotateState.value.cropRect
+                            )
+                        )
+                    }
+                    if (action.type == EditType.CROP) {
+                        _state.update { state ->
+                            state.copy(
+                                originImageApplyEditState = adjustEditedImage(state.originImage!!.asAndroidBitmap()).asImageBitmap()
+                            )
+                        }
                     }
                     _state.update {
                         it.copy(editType = action.type)
@@ -233,95 +309,80 @@ class EditImageViewModel(
         }
     }
 
-    private fun adjustEditedImage() {
-        Log.d("EditImageViewModel", "Throttle adjustment count: $count")
-        count++
-
-        viewModelScope.launch {
-            if (_state.value.editedImage != null) {
-                var brightness =
-                    AdjustmentType.Brightness.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Brightness }.value)
-                var contrast =
-                    AdjustmentType.Contrast.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Contrast }.value)
-                var saturation =
-                    AdjustmentType.Saturation.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Saturation }.value)
-                var warmth =
-                    AdjustmentType.Warmth.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Warmth }.value)
-                var shadow =
-                    AdjustmentType.Shadow.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Shadow }.value)
-                val sharpness =
-                    AdjustmentType.Sharpness.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Sharpness }.value)
-                val blur =
-                    AdjustmentType.Blur.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Blur }.value)
-                val brightnessColorMatrix = ColorMatrix().apply {
-                    set(
-                        floatArrayOf(
-                            1f, 0f, 0f, 0f, brightness,  // Red
-                            0f, 1f, 0f, 0f, brightness,  // Green
-                            0f, 0f, 1f, 0f, brightness,  // Blue
-                            0f, 0f, 0f, 1f, 0f
-                        )
-                    )
-                }
-                val contrastColorMatrix = ColorMatrix().apply {
-                    set(
-                        floatArrayOf(
-                            contrast, 0f, 0f, 0f, (-0.5f * contrast + 0.5f) * 255f,  // Red
-                            0f, contrast, 0f, 0f, (-0.5f * contrast + 0.5f) * 255f,  // Green
-                            0f, 0f, contrast, 0f, (-0.5f * contrast + 0.5f) * 255f,  // Blue
-                            0f, 0f, 0f, 1f, 0f
-                        )
-                    )
-                }
-                val saturationColorMatrix = ColorMatrix().apply {
-                    val invSat = 1 - saturation
-                    val r = 0.213f * invSat
-                    val g = 0.715f * invSat
-                    val b = 0.072f * invSat
-                    val mat = floatArrayOf(
-                        r + saturation, g, b, 0f, 0f,
-                        r, g + saturation, b, 0f, 0f,
-                        r, g, b + saturation, 0f, 0f,
-                        0f, 0f, 0f, 1f, 0f
-                    )
-                    set(mat)
-                }
-                val warmthColorMatrix = ColorMatrix().apply {
-                    set(
-                        floatArrayOf(
-                            1f + warmth * 0.2f, 0f, 0f, 0f, 0f,  // Red
-                            0f, 1f + warmth * 0.1f, 0f, 0f, 0f, // Green
-                            0f, 0f, 1f, 0f, 0f,                        // Blue
-                            0f, 0f, 0f, 1f, 0f
-                        )
-                    )
-                }
-
-                val colorMatrix = ColorMatrix().apply {
-                    postConcat(brightnessColorMatrix)
-                    postConcat(contrastColorMatrix)
-                    postConcat(saturationColorMatrix)
-                    postConcat(warmthColorMatrix)
-                }
-
-                val paint = Paint().apply {
-                    colorFilter = ColorMatrixColorFilter(colorMatrix)
-                }
-                var bitmap = _state.value.croppedImage!!.asAndroidBitmap().copy(
-                    Bitmap.Config.ARGB_8888,
-                    true
+    private fun adjustEditedImage(originBitmap: Bitmap): Bitmap {
+        val brightness =
+            AdjustmentType.Brightness.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Brightness }.value)
+        val contrast =
+            AdjustmentType.Contrast.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Contrast }.value)
+        val saturation =
+            AdjustmentType.Saturation.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Saturation }.value)
+        val warmth =
+            AdjustmentType.Warmth.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Warmth }.value)
+        val shadow =
+            AdjustmentType.Shadow.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Shadow }.value)
+        val sharpness =
+            AdjustmentType.Sharpness.toFloatValue(_adjustmentState.value.adjustments.first { it.type == AdjustmentType.Sharpness }.value)
+        val brightnessColorMatrix = ColorMatrix().apply {
+            set(
+                floatArrayOf(
+                    1f, 0f, 0f, 0f, brightness,  // Red
+                    0f, 1f, 0f, 0f, brightness,  // Green
+                    0f, 0f, 1f, 0f, brightness,  // Blue
+                    0f, 0f, 0f, 1f, 0f
                 )
-                val canvas = Canvas(bitmap)
-                canvas.drawBitmap(bitmap, 0f, 0f, paint)
-                bitmap = adjustShadows(bitmap, (shadow * 100).toInt())
-                bitmap = adjustSharpness(bitmap, sharpness)
-                _state.update {
-                    it.copy(
-                        editedImage = bitmap.asImageBitmap()
-                    )
-                }
-            }
+            )
         }
+        val contrastColorMatrix = ColorMatrix().apply {
+            set(
+                floatArrayOf(
+                    contrast, 0f, 0f, 0f, (-0.5f * contrast + 0.5f) * 255f,  // Red
+                    0f, contrast, 0f, 0f, (-0.5f * contrast + 0.5f) * 255f,  // Green
+                    0f, 0f, contrast, 0f, (-0.5f * contrast + 0.5f) * 255f,  // Blue
+                    0f, 0f, 0f, 1f, 0f
+                )
+            )
+        }
+        val saturationColorMatrix = ColorMatrix().apply {
+            val invSat = 1 - saturation
+            val r = 0.213f * invSat
+            val g = 0.715f * invSat
+            val b = 0.072f * invSat
+            val mat = floatArrayOf(
+                r + saturation, g, b, 0f, 0f,
+                r, g + saturation, b, 0f, 0f,
+                r, g, b + saturation, 0f, 0f,
+                0f, 0f, 0f, 1f, 0f
+            )
+            set(mat)
+        }
+        val warmthColorMatrix = ColorMatrix().apply {
+            set(
+                floatArrayOf(
+                    1f + warmth * 0.2f, 0f, 0f, 0f, 0f,  // Red
+                    0f, 1f + warmth * 0.1f, 0f, 0f, 0f, // Green
+                    0f, 0f, 1f, 0f, 0f,                        // Blue
+                    0f, 0f, 0f, 1f, 0f
+                )
+            )
+        }
+
+        val colorMatrix = ColorMatrix().apply {
+            postConcat(brightnessColorMatrix)
+            postConcat(contrastColorMatrix)
+            postConcat(saturationColorMatrix)
+            postConcat(warmthColorMatrix)
+        }
+
+        val paint = Paint().apply {
+            colorFilter = ColorMatrixColorFilter(colorMatrix)
+        }
+        var bitmap = originBitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(bitmap)
+        canvas.drawBitmap(bitmap, 0f, 0f, paint)
+        bitmap = adjustShadows(bitmap, (shadow * 100).toInt())
+        bitmap = adjustSharpness(bitmap, sharpness)
+        return bitmap
+
     }
 
     fun getImageUri(context: Context): Uri {
@@ -347,27 +408,6 @@ class EditImageViewModel(
 
         for (y in (0 until height)) {
             for (x in (0 until width)) {
-
-//                val pixel = bitmap.getPixel(x, y)
-//
-//                val r = (pixel shr 16) and 0xff
-//                val g = (pixel shr 8) and 0xff
-//                val b = pixel and 0xff
-//
-//                if (r < 100 && g < 100 && b < 100) {
-//                    val newR = (r + shadowAdjustment).coerceIn(0, 255)
-//                    val newG = (g + shadowAdjustment).coerceIn(0, 255)
-//                    val newB = (b + shadowAdjustment).coerceIn(0, 255)
-//
-//                    adjustedBitmap.setPixel(
-//                        x,
-//                        y,
-//                        (0xff shl 24) or (newR shl 16) or (newG shl 8) or newB
-//                    )
-//                } else {
-//                    adjustedBitmap.setPixel(x, y, pixel)
-//                }
-
                 val pixel = pixels[y * width + x]
                 val r = Color.red(pixel)
                 val g = Color.green(pixel)

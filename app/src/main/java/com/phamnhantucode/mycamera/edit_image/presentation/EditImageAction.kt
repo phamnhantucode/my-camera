@@ -9,7 +9,7 @@ sealed interface EditImageAction {
     data object EditImage : EditImageAction
     data object ClickedImage : EditImageAction
     data object BackToOriginal : EditImageAction
-    data object SaveWithReplace : EditImageAction
+    data object SaveWithOverwrite : EditImageAction
     data object SaveWithNew : EditImageAction
     data class ChangeEditType(val type: EditType) : EditImageAction
 }

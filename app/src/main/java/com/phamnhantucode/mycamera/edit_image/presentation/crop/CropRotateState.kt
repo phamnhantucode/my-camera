@@ -1,4 +1,4 @@
-package com.phamnhantucode.mycamera.edit_image.presentation
+package com.phamnhantucode.mycamera.edit_image.presentation.crop
 
 import android.graphics.Rect
 
