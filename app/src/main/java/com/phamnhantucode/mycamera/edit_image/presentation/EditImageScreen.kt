@@ -57,6 +57,7 @@ import com.phamnhantucode.mycamera.edit_image.presentation.components.EditAction
 import com.phamnhantucode.mycamera.edit_image.presentation.components.TopActionButton
 import com.phamnhantucode.mycamera.edit_image.presentation.crop.CropRotateAction
 import org.koin.androidx.compose.koinViewModel
+
 @Composable
 fun EditImageScreen(
     modifier: Modifier = Modifier,
@@ -64,7 +65,7 @@ fun EditImageScreen(
     viewModel: EditImageViewModel = koinViewModel()
 ) {
     if (state.originImage != null) {
-        Scaffold{
+        Scaffold {
             val innerPadding = remember {
                 it
             }
@@ -82,13 +83,13 @@ fun EditImageScreen(
                                 .padding(top = 16.dp)
                                 .fillMaxWidth(),
                             onSaveWithNew = {
-                                viewModel.onImageAction(EditImageAction.SaveWithNew)
+                                viewModel.onImageAction(EditImageAction.OnSave(false))
                             },
                             onBack = {
                                 viewModel.onImageAction(EditImageAction.BackToOriginal)
                             },
                             onSaveWithOverwrite = {
-                                viewModel.onImageAction(EditImageAction.SaveWithOverwrite)
+                                viewModel.onImageAction(EditImageAction.OnSave(true))
                             }
 
                         )
@@ -297,7 +298,7 @@ private fun ImagePreview(
                     sharedImages(context, listOf(viewModel.getImageUri(context)))
                 },
                 onDelete = {
-                    viewModel.onImageAction(EditImageAction.DeleteImage)
+                    viewModel.onImageAction(EditImageAction.ConfirmDeleteImage)
                 },
                 onEdit = {
                     viewModel.onImageAction(EditImageAction.EditImage)

@@ -5,4 +5,6 @@ import android.net.Uri
 
 sealed interface EditImageEvent {
     data object BackNavigate : EditImageEvent
+    data object ConfirmDeleteImage : EditImageEvent
+    data object DeleteImage : EditImageEvent
 }

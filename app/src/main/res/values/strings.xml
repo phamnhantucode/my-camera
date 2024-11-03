@@ -23,4 +23,8 @@
     <string name="camera_zoom_ratio_1x">1x</string>
     <string name="camera_zoom_ratio_2x">2x</string>
     <string name="camera_zoom_ratio_4x">4x</string>
+    <string name="delete_images">Delete images</string>
+    <string name="confirm_delete_images">Are you sure you want to delete these images?</string>
+    <string name="save_image">Save image</string>
+    <string name="confirm_save_image">Are you sure you want to save overwrite this image?</string>
 </resources>

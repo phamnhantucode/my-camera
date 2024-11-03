@@ -11,7 +11,6 @@ import com.phamnhantucode.mycamera.core.helper.StorageKeeper
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -65,21 +64,16 @@ class ListImagesViewModel(
                     }
                 }
 
+                is ListImagesAction.ConfirmDeleteSelectedImages -> {
+                    _events.send(ListImagesEvent.ConfirmDeleteImages)
+                }
+
                 is ListImagesAction.DeleteSelectedImages -> {
-                    try {
-                        storageKeeper.deleteImagesByFiles(
-                            fileImages.filterIndexed { index, _ ->
-                                state.value.selectedImagesIndex.contains(index)
-                            }
-                        )
-                    } catch (e: Exception) {
-                        TODO()
-                    }
+                    val selectedImages = state.value.selectedImagesIndex.map { fileImages[it] }
+                    storageKeeper.deleteImagesByFiles(selectedImages)
                     getImages()
                     _state.update {
-                        it.copy(
-                            selectedImagesIndex = emptyList()
-                        )
+                        it.copy(selectedImagesIndex = emptyList())
                     }
                 }
 

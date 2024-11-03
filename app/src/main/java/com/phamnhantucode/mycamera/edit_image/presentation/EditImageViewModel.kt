@@ -81,6 +81,7 @@ class EditImageViewModel(
                 EditImageAction.EditImage -> _state.update {
                         it.copy(isEditing = true, isShowingActionButtons = false)
                     }
+                EditImageAction.ConfirmDeleteImage -> _events.send(EditImageEvent.ConfirmDeleteImage)
                 EditImageAction.DeleteImage -> {
                     storageKeeper.deleteImage(fileImage.absolutePath)
                     _events.send(EditImageEvent.BackNavigate)
@@ -100,7 +101,6 @@ class EditImageViewModel(
                         CropRotateState()
                     }
                 }
-                EditImageAction.SaveWithNew -> saveImage(isOverwrite = false)
                 EditImageAction.SaveWithOverwrite -> saveImage(isOverwrite = true)
                 is EditImageAction.ChangeEditType -> {
                     if (_state.value.editType == EditType.CROP && action.type != EditType.CROP) {
@@ -118,7 +118,13 @@ class EditImageViewModel(
                     }
                 }
                 EditImageAction.BackNavigate -> _events.send(EditImageEvent.BackNavigate)
-
+                is EditImageAction.OnSave -> {
+                    if (action.isOverwrite) {
+                        _events.send(EditImageEvent.DeleteImage)
+                    } else {
+                        saveImage(isOverwrite = false)
+                    }
+                }
             }
             throttleAdjustment()
         }

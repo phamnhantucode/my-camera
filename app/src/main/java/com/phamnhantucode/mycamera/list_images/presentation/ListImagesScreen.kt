@@ -111,7 +111,7 @@ fun ListImagesScreen(
                         )
                     },
                     onDelete = {
-                        viewModel.onAction(ListImagesAction.DeleteSelectedImages)
+                        viewModel.onAction(ListImagesAction.ConfirmDeleteSelectedImages)
                     }
                 )
             }
