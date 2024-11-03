@@ -48,6 +48,9 @@ image editing capabilities.
 
 ## Screenshots and Videos
 
+**Video Demos**: [Demo](https://youtu.be/qIouprJ-VqU)
+
+**Shorts**:
 <p float="left">
   <img src="demo/images/camera_1.gif" width="400" />
   <img src="demo/images/camera_2.gif" width="400" />
@@ -66,4 +69,3 @@ image editing capabilities.
   <img src="demo/images/editing_4.gif" width="400" />
   <img src="demo/images/editing_5.gif" width="400" />
 </p>
-
