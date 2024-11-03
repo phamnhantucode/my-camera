@@ -17,7 +17,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,6 +54,7 @@ import com.phamnhantucode.mycamera.R
 import com.phamnhantucode.mycamera.camera.presentation.components.CameraPreview
 import com.phamnhantucode.mycamera.camera.presentation.components.RectNet
 import com.phamnhantucode.mycamera.camera.presentation.components.TakePictureButton
+import com.phamnhantucode.mycamera.camera.presentation.components.ZoomButtons
 
 @Composable
 fun CameraScreen(
@@ -66,11 +69,13 @@ fun CameraScreen(
         val cameraController = remember {
             LifecycleCameraController(applicationContext).apply {
                 setEnabledUseCases(LifecycleCameraController.IMAGE_CAPTURE)
+                isPinchToZoomEnabled = false
+                isTapToFocusEnabled = true
             }
         }
-        LaunchedEffect(state.cameraSelector) {
+        LaunchedEffect(state.cameraSelector, state.cameraZoomRatio) {
             handleCameraControllerState(cameraController, state)
-            cameraController.isTapToFocusEnabled = true
+            cameraController.setZoomRatio(state.cameraZoomRatio.getFloatValue())
         }
         Box(
             modifier = Modifier.fillMaxSize()
@@ -93,59 +98,70 @@ fun CameraScreen(
             viewModel = viewModel,
             state = state
         )
-        Row(
+        Column(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                .padding(vertical = 32.dp)
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .wrapContentHeight(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .align(Alignment.BottomCenter),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val context = LocalContext.current
-            if (state.latestImageCapture != null) {
-                Image(
-                    bitmap = state.latestImageCapture.asImageBitmap(),
-                    contentDescription = getString(context, R.string.newest_image_capture),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(58.dp)
-                        .aspectRatio(1f)
-                        .clip(CircleShape)
-                        .border(0.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                        .clickable { viewModel.onAction(CameraAction.NavigateToListImages) }
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(58.dp)
-                        .aspectRatio(1f)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                )
-            }
-            TakePictureButton(modifier = Modifier.size(78.dp),
-                onClick = { takePicture(cameraController, applicationContext, viewModel) }
+            ZoomButtons(
+                currentSelected = state.cameraZoomRatio,
+                onZoomSelected = { viewModel.onAction(CameraAction.ChangeZoomRatio(it)) }
             )
-            IconButton(
-                onClick = {
-                    viewModel.onAction(CameraAction.SwitchCamera)
-                },
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.2f)
-                ),
+            Spacer(modifier = Modifier.size(16.dp))
+            Row(
                 modifier = Modifier
-                    .size(58.dp)
-                    .aspectRatio(1f)
-                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                    .padding(vertical = 32.dp)
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_rotate),
-                    contentDescription = getString(context, R.string.switch_camera),
-                    modifier = Modifier.size(24.dp)
+                val context = LocalContext.current
+                if (state.latestImageCapture != null) {
+                    Image(
+                        bitmap = state.latestImageCapture.asImageBitmap(),
+                        contentDescription = getString(context, R.string.newest_image_capture),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(58.dp)
+                            .aspectRatio(1f)
+                            .clip(CircleShape)
+                            .border(0.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                            .clickable { viewModel.onAction(CameraAction.NavigateToListImages) }
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(58.dp)
+                            .aspectRatio(1f)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                    )
+                }
+                TakePictureButton(modifier = Modifier.size(78.dp),
+                    onClick = { takePicture(cameraController, applicationContext, viewModel) }
                 )
+                IconButton(
+                    onClick = {
+                        viewModel.onAction(CameraAction.SwitchCamera)
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.2f)
+                    ),
+                    modifier = Modifier
+                        .size(58.dp)
+                        .aspectRatio(1f)
+                        .clip(CircleShape)
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_rotate),
+                        contentDescription = getString(context, R.string.switch_camera),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

@@ -67,6 +67,12 @@ class CameraViewModel(
                         it.copy(enableCameraNet = action.enable)
                     }
                 }
+
+                is CameraAction.ChangeZoomRatio -> {
+                    _state.update {
+                        it.copy(cameraZoomRatio = action.zoomRatio)
+                    }
+                }
             }
         }
     }

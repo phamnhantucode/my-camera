@@ -8,5 +8,5 @@ sealed class CameraAction {
     data object NavigateToListImages : CameraAction()
     data class ChangeFlashState(val flashState: FlashState) : CameraAction()
     data class EnableCameraNet(val enable: Boolean) : CameraAction()
-
+    data class ChangeZoomRatio(val zoomRatio: CameraZoomRatio) : CameraAction()
 }

@@ -20,4 +20,7 @@
     <string name="switch_camera">Switch camera</string>
     <string name="flash_mode">Flash mode</string>
     <string name="camera_net">Camera net</string>
+    <string name="camera_zoom_ratio_1x">1x</string>
+    <string name="camera_zoom_ratio_2x">2x</string>
+    <string name="camera_zoom_ratio_4x">4x</string>
 </resources>
