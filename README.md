@@ -3,10 +3,7 @@
 ## Description
 
 My Camera is an Android application that allows users to take pictures, view a list of captured
-images, and edit them with various features. Built with Kotlin, this app leverages Jetpack Compose
-for the UI and integrates
-the [Android Image Cropper](https://github.com/CanHub/Android-Image-Cropper) library for advanced
-image editing capabilities.
+images, and edit them with various features.
 
 ## Features
 
