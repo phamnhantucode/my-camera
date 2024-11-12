@@ -39,8 +39,7 @@ images, and edit them with various features.
 
 - **Programming Language**: Kotlin
 - **UI Framework**: Jetpack Compose
-- **Image Cropping Library
-  **: [Android Image Cropper](https://github.com/CanHub/Android-Image-Cropper)
+- **Image Cropping Library**: [Android Image Cropper](https://github.com/CanHub/Android-Image-Cropper)
 
 ## Screenshots and Videos
 
