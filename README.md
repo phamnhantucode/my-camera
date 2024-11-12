@@ -10,7 +10,6 @@ images, and edit them with various features.
 ### 1. Take a Picture
 
 - **Camera Flash Option**: Toggle the camera flash on or off.
-- **Network Enable/Disable**: Control the network access for the camera functionality.
 - **Change Camera Zoom Ratio**: Adjust the zoom level of the camera.
 - **Switch Between Front and Back Camera**: Easily switch the camera view.
 - **Capture Photo**: Take pictures effortlessly.
